@@ -1,4 +1,4 @@
-<!-- Helm v1.0.0 -->
+<!-- Helm v1.1.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    /* ── Tokens ── */
+    /* ── Tokens — light mode ── */
     :root {
       --teal:        #0075ab;
       --teal-light:  #cce8f4;
@@ -34,6 +34,45 @@
       --shadow:      0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
       --shadow-lg:   0 4px 24px rgba(0,0,0,.10);
     }
+
+    /* ── Dark mode tokens ── */
+    body.dark {
+      --teal:        #38bdf8;
+      --teal-light:  #0c3a52;
+      --teal-dark:   #7dd3fc;
+      --teal-faint:  #0c2233;
+      --red:         #f87171;
+      --red-faint:   #2d1515;
+      --green:       #34d399;
+      --green-faint: #052e1c;
+      --amber:       #fbbf24;
+      --amber-faint: #2d1f02;
+      --bg:          #0f172a;
+      --surface:     #1e293b;
+      --border:      #334155;
+      --text:        #f1f5f9;
+      --muted:       #94a3b8;
+      --shadow:      0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.25);
+      --shadow-lg:   0 4px 24px rgba(0,0,0,.4);
+    }
+
+    /* ── Dark mode toggle button ── */
+    .btn-darkmode {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: .85rem;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+      flex-shrink: 0;
+    }
+    .btn-darkmode:hover { background: var(--border); color: var(--text); }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -677,44 +716,38 @@
     <div class="header-user">
       <span class="header-user-name" id="header-user-name"></span>
       <span class="header-role-badge" id="header-role-badge"></span>
+      <button class="btn-darkmode" id="btn-darkmode" title="Toggle dark mode">☀️</button>
       <button class="btn-signout" id="btn-signout">Sign out</button>
     </div>
   </header>
 
   <!-- ══ HOME / MODULE LAUNCHER ══ -->
   <div class="page" id="home-page">
-    <div class="home-greeting">
-      <div class="home-greeting-name" id="greeting-name">Welcome back</div>
-      <div class="home-greeting-sub" id="greeting-sub">Choose a module to get started.</div>
+    <div style="padding:20px;">
+      <div class="home-greeting">
+        <div class="home-greeting-name" id="greeting-name">Welcome back</div>
+        <div class="home-greeting-sub" id="greeting-sub">Choose a module to get started.</div>
+      </div>
+      <div class="module-grid" id="module-grid"></div>
     </div>
-    <div class="module-grid" id="module-grid"></div>
   </div>
 
   <!-- ══ MODULE PAGES (placeholders — replaced when modules are built in) ══ -->
-  <div class="page" id="delivery-page">
+  <div class="page" id="haul-page">
     <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
     <div class="module-placeholder">
       <div class="ph-icon">🚐</div>
-      <div class="ph-title">Driver Delivery</div>
-      <div class="ph-sub">Haul + Module 3 — coming next build.</div>
+      <div class="ph-title">Haul</div>
+      <div class="ph-sub">Route planning and driver delivery — coming next build.</div>
     </div>
   </div>
 
-  <div class="page" id="stock-page">
+  <div class="page" id="talli-page">
     <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
     <div class="module-placeholder">
       <div class="ph-icon">📦</div>
-      <div class="ph-title">Stock Check</div>
-      <div class="ph-sub">Talli stock module — migrating in next build.</div>
-    </div>
-  </div>
-
-  <div class="page" id="goods_in-page">
-    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
-    <div class="module-placeholder">
-      <div class="ph-icon">📥</div>
-      <div class="ph-title">Goods In</div>
-      <div class="ph-sub">Talli goods in module — migrating in next build.</div>
+      <div class="ph-title">Talli</div>
+      <div class="ph-sub">Stock, goods in, pick verification and warehouse ops — migrating in next build.</div>
     </div>
   </div>
 
@@ -723,7 +756,7 @@
     <div class="module-placeholder">
       <div class="ph-icon">🔧</div>
       <div class="ph-title">Fitters</div>
-      <div class="ph-sub">Module 6 — new build coming soon.</div>
+      <div class="ph-sub">Site materials check and job sign-off — new build coming soon.</div>
     </div>
   </div>
 
@@ -732,16 +765,16 @@
     <div class="module-placeholder">
       <div class="ph-icon">🎯</div>
       <div class="ph-title">Scout</div>
-      <div class="ph-sub">Sales and ops interface — migrating in next build.</div>
+      <div class="ph-sub">Sales, customer comms and payments — migrating in next build.</div>
     </div>
   </div>
 
-  <div class="page" id="crm-page">
+  <div class="page" id="blueprint-page">
     <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
     <div class="module-placeholder">
-      <div class="ph-icon">👥</div>
-      <div class="ph-title">CRM</div>
-      <div class="ph-sub">Customer data view — coming soon.</div>
+      <div class="ph-icon">📐</div>
+      <div class="ph-title">Blueprint</div>
+      <div class="ph-sub">Survey, design and quote builder — migrating in next build.</div>
     </div>
   </div>
 
@@ -795,17 +828,16 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.0.0';
+const APP_VERSION  = 'v1.1.0';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
-  delivery:  { name: 'Driver Delivery', icon: '🚐', color: 'c-teal',  desc: 'Route planning and delivery confirmation', page: 'delivery-page' },
-  stock:     { name: 'Stock Check',     icon: '📦', color: 'c-green', desc: 'Pick verification and stock management',   page: 'stock-page' },
-  goods_in:  { name: 'Goods In',        icon: '📥', color: 'c-amber', desc: 'Receive and log incoming deliveries',      page: 'goods_in-page' },
-  fitters:   { name: 'Fitters',         icon: '🔧', color: 'c-teal',  desc: 'Job sheets and site management',           page: 'fitters-page' },
-  scout:     { name: 'Scout',           icon: '🎯', color: 'c-green', desc: 'Sales and operations interface',           page: 'scout-page' },
-  crm:       { name: 'CRM',             icon: '👥', color: 'c-amber', desc: 'Customer and job data',                    page: 'crm-page' },
-  admin:     { name: 'Admin',           icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',        page: 'admin-page' },
+  haul:      { name: 'Haul',      icon: '🚐', color: 'c-teal',  desc: 'Route planning and driver delivery',      page: 'haul-page' },
+  talli:     { name: 'Talli',     icon: '📦', color: 'c-green', desc: 'Stock, goods in, pick and warehouse ops', page: 'talli-page' },
+  fitters:   { name: 'Fitters',   icon: '🔧', color: 'c-amber', desc: 'Site materials check and job sign-off',   page: 'fitters-page' },
+  scout:     { name: 'Scout',     icon: '🎯', color: 'c-teal',  desc: 'Sales, customer comms and payments',      page: 'scout-page' },
+  blueprint: { name: 'Blueprint', icon: '📐', color: 'c-green', desc: 'Survey, design and quote builder',        page: 'blueprint-page' },
+  admin:     { name: 'Admin',     icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',       page: 'admin-page' },
 };
 
 const ALL_MODULES = Object.keys(MODULE_REGISTRY).filter(k => k !== 'home' && k !== 'admin');
@@ -1360,6 +1392,25 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/* ── Dark mode ── */
+function initDarkMode() {
+  const saved = localStorage.getItem('helm-dark');
+  if (saved === 'true') {
+    document.body.classList.add('dark');
+    document.getElementById('btn-darkmode').textContent = '🌙';
+  } else {
+    document.getElementById('btn-darkmode').textContent = '☀️';
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('helm-dark', isDark);
+  document.getElementById('btn-darkmode').textContent = isDark ? '🌙' : '☀️';
+}
+
+document.getElementById('btn-darkmode').addEventListener('click', toggleDarkMode);
+
 /* ── PWA install ── */
 let deferredInstall;
 window.addEventListener('beforeinstallprompt', e => {
@@ -1368,6 +1419,7 @@ window.addEventListener('beforeinstallprompt', e => {
 });
 
 /* ── Init ── */
+initDarkMode();
 showPage('pin-page');
 </script>
 </body>
