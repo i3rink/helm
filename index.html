@@ -1,0 +1,1374 @@
+<!-- Helm v1.0.0 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0075ab" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Helm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --teal:        #0075ab;
+      --teal-light:  #cce8f4;
+      --teal-dark:   #005f8a;
+      --teal-faint:  #f0f8fd;
+      --red:         #ef4444;
+      --red-faint:   #fef2f2;
+      --green:       #10b981;
+      --green-faint: #f0fdf4;
+      --amber:       #f59e0b;
+      --amber-faint: #fffbeb;
+      --bg:          #f8fafc;
+      --surface:     #ffffff;
+      --border:      #e2e8f0;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --radius:      12px;
+      --radius-sm:   8px;
+      --shadow:      0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+      --shadow-lg:   0 4px 24px rgba(0,0,0,.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hanken Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    #app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+    .page { display: none; flex-direction: column; flex: 1; }
+    .page.active { display: flex; }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--teal);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      letter-spacing: -.5px;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-user-name {
+      font-size: .82rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .header-role-badge {
+      font-size: .7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--teal-light);
+      color: var(--teal-dark);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .btn-signout {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .btn-signout:hover { background: var(--bg); color: var(--text); }
+
+    /* ── Cards / surfaces ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .card-subtitle {
+      font-size: .83rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+      text-decoration: none;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: var(--teal); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--teal-dark); }
+    .btn-ghost { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { background: var(--border); color: var(--text); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn-outline { background: transparent; color: var(--teal); border: 1.5px solid var(--teal); }
+    .btn-outline:hover:not(:disabled) { background: var(--teal-faint); }
+    .btn-sm { padding: 6px 12px; font-size: .8rem; }
+    .btn-full { width: 100%; }
+
+    /* ── Form elements ── */
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: .95rem;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .form-input:focus { border-color: var(--teal); }
+    .form-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: .95rem;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .form-select:focus { border-color: var(--teal); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: .88rem;
+      font-weight: 500;
+      z-index: 9999;
+      transition: transform .25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { background: var(--green); }
+    #toast.error { background: var(--red); }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.45);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 16px;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ══════════════════════════════════════
+       PIN / LOGIN SCREEN
+    ══════════════════════════════════════ */
+    #pin-page {
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 24px;
+      background: var(--bg);
+    }
+    .pin-container {
+      width: 100%;
+      max-width: 340px;
+    }
+    .pin-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .pin-logo {
+      width: 52px;
+      height: 52px;
+      background: var(--teal);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      box-shadow: 0 4px 16px rgba(0,117,171,.3);
+    }
+    .pin-logo svg { width: 28px; height: 28px; color: #fff; }
+    .pin-brand-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--text);
+      letter-spacing: -.5px;
+    }
+    .pin-brand-sub {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .pin-dots {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px 0 24px;
+    }
+    .pin-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .15s;
+    }
+    .pin-dot.filled { background: var(--teal); }
+    .pin-dot.error { background: var(--red); }
+    .pin-label {
+      text-align: center;
+      font-size: .85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      height: 20px;
+    }
+    .pin-label.err { color: var(--red); }
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .pin-key {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      height: 64px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pin-key:active { background: var(--teal-faint); border-color: var(--teal); transform: scale(.96); }
+    .pin-key.del { font-size: 1rem; color: var(--muted); }
+    .pin-key.zero { grid-column: 2; }
+    .pin-shake { animation: shake .35s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-5px); }
+      80%      { transform: translateX(5px); }
+    }
+
+    /* ══════════════════════════════════════
+       HOME / MODULE LAUNCHER
+    ══════════════════════════════════════ */
+    #home-page { padding: 20px; }
+    .home-greeting {
+      margin-bottom: 20px;
+    }
+    .home-greeting-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .home-greeting-sub {
+      font-size: .85rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .module-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .module-card:hover { border-color: var(--teal); box-shadow: 0 4px 16px rgba(0,117,171,.12); transform: translateY(-1px); }
+    .module-card:active { transform: translateY(0); }
+    .module-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .module-card-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: .95rem;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .module-card-desc {
+      font-size: .75rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .module-card.c-teal .module-card-icon { background: var(--teal-faint); color: var(--teal); }
+    .module-card.c-green .module-card-icon { background: var(--green-faint); color: var(--green); }
+    .module-card.c-amber .module-card-icon { background: var(--amber-faint); color: var(--amber); }
+    .module-card.c-red .module-card-icon { background: var(--red-faint); color: var(--red); }
+
+    /* ══════════════════════════════════════
+       ADMIN PANEL
+    ══════════════════════════════════════ */
+    #admin-page { padding: 20px; }
+    .admin-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 20px;
+    }
+    .admin-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: .82rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--muted);
+      border: none;
+      background: none;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .admin-tab.active { background: var(--surface); color: var(--teal); box-shadow: var(--shadow); }
+
+    /* User list */
+    .user-list { display: flex; flex-direction: column; gap: 8px; }
+    .user-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--teal-light);
+      color: var(--teal-dark);
+      font-weight: 700;
+      font-size: .9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-weight: 600; font-size: .9rem; color: var(--text); }
+    .user-meta { font-size: .75rem; color: var(--muted); margin-top: 1px; }
+    .user-inactive .user-name { color: var(--muted); }
+    .user-inactive .user-avatar { background: var(--border); color: var(--muted); }
+    .badge {
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      flex-shrink: 0;
+    }
+    .badge-active { background: var(--green-faint); color: var(--green); }
+    .badge-inactive { background: var(--border); color: var(--muted); }
+    .badge-role { background: var(--teal-light); color: var(--teal-dark); }
+    .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* Role list */
+    .role-list { display: flex; flex-direction: column; gap: 8px; }
+    .role-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .role-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: .95rem;
+      margin-bottom: 8px;
+      text-transform: capitalize;
+    }
+    .module-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .module-chip {
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: var(--teal-faint);
+      border: 1px solid var(--teal-light);
+      color: var(--teal-dark);
+    }
+    .role-edit-btn {
+      margin-top: 10px;
+      font-size: .78rem;
+    }
+
+    /* Module checkboxes in role editor */
+    .module-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .module-check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .module-check-row.checked { border-color: var(--teal); background: var(--teal-faint); }
+    .module-check-row input { accent-color: var(--teal); width: 16px; height: 16px; cursor: pointer; }
+    .module-check-label { font-size: .88rem; font-weight: 500; }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .empty-state .es-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── Util ── */
+    .text-muted { color: var(--muted); }
+    .text-sm { font-size: .83rem; }
+    .mt-2 { margin-top: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .flex { display: flex; }
+    .gap-2 { gap: 8px; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .w-full { width: 100%; }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    /* ── Module placeholder ── */
+    .module-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .module-placeholder .ph-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .module-placeholder .ph-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+    .module-placeholder .ph-sub { font-size: .85rem; color: var(--muted); }
+
+    /* ── Back button ── */
+    .mod-back { margin-bottom: 14px; }
+
+    @media (min-width: 480px) {
+      .module-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══ PIN SCREEN ══ -->
+  <div class="page active" id="pin-page">
+    <div class="pin-container">
+      <div class="pin-brand">
+        <div class="pin-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32 2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+          </svg>
+        </div>
+        <div class="pin-brand-name">Helm</div>
+        <div class="pin-brand-sub">Annick Workspace</div>
+      </div>
+      <div class="pin-label" id="pin-label">Enter your PIN</div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-pad" id="pin-pad">
+        <button class="pin-key" data-n="1">1</button>
+        <button class="pin-key" data-n="2">2</button>
+        <button class="pin-key" data-n="3">3</button>
+        <button class="pin-key" data-n="4">4</button>
+        <button class="pin-key" data-n="5">5</button>
+        <button class="pin-key" data-n="6">6</button>
+        <button class="pin-key" data-n="7">7</button>
+        <button class="pin-key" data-n="8">8</button>
+        <button class="pin-key" data-n="9">9</button>
+        <button class="pin-key del" data-n="del">&#9003;</button>
+        <button class="pin-key zero" data-n="0">0</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HEADER (shown after login) ══ -->
+  <header class="app-header" id="app-header" style="display:none;">
+    <div class="header-brand">
+      <div class="header-logo">H</div>
+      <span class="header-title">Helm</span>
+    </div>
+    <div class="header-user">
+      <span class="header-user-name" id="header-user-name"></span>
+      <span class="header-role-badge" id="header-role-badge"></span>
+      <button class="btn-signout" id="btn-signout">Sign out</button>
+    </div>
+  </header>
+
+  <!-- ══ HOME / MODULE LAUNCHER ══ -->
+  <div class="page" id="home-page">
+    <div class="home-greeting">
+      <div class="home-greeting-name" id="greeting-name">Welcome back</div>
+      <div class="home-greeting-sub" id="greeting-sub">Choose a module to get started.</div>
+    </div>
+    <div class="module-grid" id="module-grid"></div>
+  </div>
+
+  <!-- ══ MODULE PAGES (placeholders — replaced when modules are built in) ══ -->
+  <div class="page" id="delivery-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">🚐</div>
+      <div class="ph-title">Driver Delivery</div>
+      <div class="ph-sub">Haul + Module 3 — coming next build.</div>
+    </div>
+  </div>
+
+  <div class="page" id="stock-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">📦</div>
+      <div class="ph-title">Stock Check</div>
+      <div class="ph-sub">Talli stock module — migrating in next build.</div>
+    </div>
+  </div>
+
+  <div class="page" id="goods_in-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">📥</div>
+      <div class="ph-title">Goods In</div>
+      <div class="ph-sub">Talli goods in module — migrating in next build.</div>
+    </div>
+  </div>
+
+  <div class="page" id="fitters-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">🔧</div>
+      <div class="ph-title">Fitters</div>
+      <div class="ph-sub">Module 6 — new build coming soon.</div>
+    </div>
+  </div>
+
+  <div class="page" id="scout-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">🎯</div>
+      <div class="ph-title">Scout</div>
+      <div class="ph-sub">Sales and ops interface — migrating in next build.</div>
+    </div>
+  </div>
+
+  <div class="page" id="crm-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="module-placeholder">
+      <div class="ph-icon">👥</div>
+      <div class="ph-title">CRM</div>
+      <div class="ph-sub">Customer data view — coming soon.</div>
+    </div>
+  </div>
+
+  <!-- ══ ADMIN PANEL ══ -->
+  <div class="page" id="admin-page">
+    <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="users">Users</button>
+      <button class="admin-tab" data-tab="roles">Roles</button>
+    </div>
+
+    <!-- Users tab -->
+    <div id="admin-users-tab">
+      <div class="section-header">
+        <span class="section-title">Users</span>
+        <button class="btn btn-primary btn-sm" id="btn-add-user">+ Add user</button>
+      </div>
+      <div id="user-list" class="user-list">
+        <div class="loading-screen"><div class="spinner"></div><span>Loading users…</span></div>
+      </div>
+    </div>
+
+    <!-- Roles tab -->
+    <div id="admin-roles-tab" style="display:none;">
+      <div class="section-header">
+        <span class="section-title">Roles &amp; permissions</span>
+      </div>
+      <div id="role-list" class="role-list">
+        <div class="loading-screen"><div class="spinner"></div><span>Loading roles…</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══ MODAL ══ -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+/* ── Config ── */
+const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
+const APP_VERSION  = 'v1.0.0';
+
+/* ── Module registry ── */
+const MODULE_REGISTRY = {
+  delivery:  { name: 'Driver Delivery', icon: '🚐', color: 'c-teal',  desc: 'Route planning and delivery confirmation', page: 'delivery-page' },
+  stock:     { name: 'Stock Check',     icon: '📦', color: 'c-green', desc: 'Pick verification and stock management',   page: 'stock-page' },
+  goods_in:  { name: 'Goods In',        icon: '📥', color: 'c-amber', desc: 'Receive and log incoming deliveries',      page: 'goods_in-page' },
+  fitters:   { name: 'Fitters',         icon: '🔧', color: 'c-teal',  desc: 'Job sheets and site management',           page: 'fitters-page' },
+  scout:     { name: 'Scout',           icon: '🎯', color: 'c-green', desc: 'Sales and operations interface',           page: 'scout-page' },
+  crm:       { name: 'CRM',             icon: '👥', color: 'c-amber', desc: 'Customer and job data',                    page: 'crm-page' },
+  admin:     { name: 'Admin',           icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',        page: 'admin-page' },
+};
+
+const ALL_MODULES = Object.keys(MODULE_REGISTRY).filter(k => k !== 'home' && k !== 'admin');
+
+/* ── State ── */
+const state = {
+  pin:        '',
+  user:       null,   // { id, name, role_id, role_name, permitted_modules }
+  roles:      [],
+  users:      [],
+  adminTab:   'users',
+  view:       'pin',
+};
+
+/* ── Supabase helpers ── */
+async function sb(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey':        SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type':  'application/json',
+      'Prefer':        opts.prefer || 'return=representation',
+      ...opts.headers,
+    },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+const sbGet    = (table, qs = '')   => sb(`${table}?${qs}`);
+const sbPost   = (table, body)      => sb(table, { method: 'POST', body: JSON.stringify(body) });
+const sbPatch  = (table, qs, body)  => sb(`${table}?${qs}`, { method: 'PATCH', body: JSON.stringify(body), prefer: 'return=representation' });
+
+/* ── PIN hashing ── */
+async function hashPin(pin) {
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ── Toast ── */
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = type ? `show ${type}` : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+/* ── Modal ── */
+function showModal(title, bodyHtml, actions) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  const actEl = document.getElementById('modal-actions');
+  actEl.innerHTML = '';
+  actions.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = `btn ${a.cls || 'btn-ghost'}`;
+    btn.textContent = a.label;
+    btn.onclick = a.fn;
+    actEl.appendChild(btn);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+/* ── Page routing ── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById(id);
+  if (pg) pg.classList.add('active');
+  state.view = id;
+  window.scrollTo(0, 0);
+}
+
+function showAuthenticatedUI(show) {
+  document.getElementById('app-header').style.display = show ? 'flex' : 'none';
+}
+
+/* ══════════════════════════════════════
+   PIN FLOW
+══════════════════════════════════════ */
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById(`d${i}`);
+    d.className = 'pin-dot' + (i < state.pin.length ? ' filled' : '');
+  }
+}
+
+function pinShake() {
+  const pad = document.getElementById('pin-pad');
+  const dots = document.getElementById('pin-dots');
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`d${i}`).className = 'pin-dot error';
+  }
+  dots.classList.add('pin-shake');
+  pad.classList.add('pin-shake');
+  setTimeout(() => {
+    dots.classList.remove('pin-shake');
+    pad.classList.remove('pin-shake');
+    state.pin = '';
+    updateDots();
+  }, 380);
+}
+
+async function attemptLogin() {
+  const hash = await hashPin(state.pin);
+  try {
+    const rows = await sbGet('users', `pin_hash=eq.${hash}&active=eq.true&select=id,name,role_id`);
+    if (!rows || rows.length === 0) {
+      document.getElementById('pin-label').textContent = 'Incorrect PIN — try again';
+      document.getElementById('pin-label').className = 'pin-label err';
+      pinShake();
+      return;
+    }
+    const user = rows[0];
+    // Fetch role
+    const roleRows = await sbGet('roles', `id=eq.${user.role_id}&select=name,permitted_modules`);
+    const role = roleRows[0];
+    state.user = {
+      id: user.id,
+      name: user.name,
+      role_id: user.role_id,
+      role_name: role.name,
+      permitted_modules: role.permitted_modules || [],
+    };
+    onLoginSuccess();
+  } catch (e) {
+    toast('Connection error — try again', 'error');
+    state.pin = '';
+    updateDots();
+  }
+}
+
+function onLoginSuccess() {
+  // Header
+  document.getElementById('header-user-name').textContent = state.user.name;
+  document.getElementById('header-role-badge').textContent = state.user.role_name;
+  showAuthenticatedUI(true);
+
+  // Build module grid
+  buildModuleGrid();
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting-name').textContent = `${greet}, ${state.user.name.split(' ')[0]}.`;
+
+  // Reset PIN screen for next time
+  state.pin = '';
+  document.getElementById('pin-label').textContent = 'Enter your PIN';
+  document.getElementById('pin-label').className = 'pin-label';
+  updateDots();
+
+  showPage('home-page');
+}
+
+function buildModuleGrid() {
+  const grid = document.getElementById('module-grid');
+  grid.innerHTML = '';
+  const mods = state.user.permitted_modules;
+
+  mods.forEach(key => {
+    if (key === 'home') return;
+    const m = MODULE_REGISTRY[key];
+    if (!m) return;
+    const card = document.createElement('div');
+    card.className = `module-card ${m.color}`;
+    card.dataset.action = 'open-module';
+    card.dataset.mod = key;
+    card.innerHTML = `
+      <div class="module-card-icon">${m.icon}</div>
+      <div>
+        <div class="module-card-name">${m.name}</div>
+        <div class="module-card-desc">${m.desc}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  if (grid.children.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="es-icon">🔒</div><p>No modules assigned. Contact your admin.</p></div>';
+  }
+}
+
+/* ── PIN key handler ── */
+document.getElementById('pin-pad').addEventListener('click', e => {
+  const key = e.target.closest('.pin-key');
+  if (!key) return;
+  const n = key.dataset.n;
+  if (n === 'del') {
+    state.pin = state.pin.slice(0, -1);
+    updateDots();
+    document.getElementById('pin-label').textContent = 'Enter your PIN';
+    document.getElementById('pin-label').className = 'pin-label';
+    return;
+  }
+  if (state.pin.length >= 4) return;
+  state.pin += n;
+  updateDots();
+  if (state.pin.length === 4) attemptLogin();
+});
+
+/* Hardware keyboard support on PIN screen */
+document.addEventListener('keydown', e => {
+  if (state.view !== 'pin-page') return;
+  if (e.key >= '0' && e.key <= '9' && state.pin.length < 4) {
+    state.pin += e.key;
+    updateDots();
+    if (state.pin.length === 4) attemptLogin();
+  }
+  if (e.key === 'Backspace') {
+    state.pin = state.pin.slice(0, -1);
+    updateDots();
+  }
+});
+
+/* ── Sign out ── */
+document.getElementById('btn-signout').addEventListener('click', () => {
+  showModal('Sign out', '<p class="text-muted text-sm">Are you sure you want to sign out?</p>', [
+    { label: 'Cancel',   cls: 'btn-ghost',   fn: closeModal },
+    { label: 'Sign out', cls: 'btn-danger',  fn: () => {
+      closeModal();
+      state.user = null;
+      state.pin  = '';
+      showAuthenticatedUI(false);
+      showPage('pin-page');
+    }},
+  ]);
+});
+
+/* ══════════════════════════════════════
+   GLOBAL ACTION HANDLER
+══════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+
+  if (action === 'go-home') { showPage('home-page'); return; }
+
+  if (action === 'open-module') {
+    const mod = el.dataset.mod;
+    const m = MODULE_REGISTRY[mod];
+    if (!m) return;
+    if (mod === 'admin') { openAdmin(); return; }
+    showPage(m.page);
+    return;
+  }
+
+  if (action === 'admin-tab') {
+    const tab = el.dataset.tab;
+    state.adminTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('admin-users-tab').style.display = tab === 'users' ? '' : 'none';
+    document.getElementById('admin-roles-tab').style.display = tab === 'roles'  ? '' : 'none';
+    if (tab === 'roles') loadRoles();
+    return;
+  }
+
+  if (action === 'edit-user') { editUser(el.dataset.id); return; }
+  if (action === 'toggle-user') { toggleUser(el.dataset.id, el.dataset.active === 'true'); return; }
+  if (action === 'edit-role') { editRole(el.dataset.id); return; }
+});
+
+document.querySelectorAll('.admin-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    const tab = t.dataset.tab;
+    state.adminTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
+    document.getElementById('admin-users-tab').style.display = tab === 'users' ? '' : 'none';
+    document.getElementById('admin-roles-tab').style.display = tab === 'roles'  ? '' : 'none';
+    if (tab === 'roles') loadRoles();
+    if (tab === 'users') loadUsers();
+  });
+});
+
+/* ══════════════════════════════════════
+   ADMIN — USERS
+══════════════════════════════════════ */
+async function openAdmin() {
+  showPage('admin-page');
+  await Promise.all([loadUsers(), loadRoles()]);
+}
+
+async function loadUsers() {
+  const list = document.getElementById('user-list');
+  list.innerHTML = '<div class="loading-screen"><div class="spinner"></div><span>Loading users…</span></div>';
+  try {
+    const users = await sbGet('users', 'select=id,name,role_id,active,created_at&order=name.asc');
+    const roles  = await sbGet('roles', 'select=id,name');
+    state.users = users;
+    state.roles = roles;
+    renderUserList(users, roles);
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state"><p>Failed to load users: ${e.message}</p></div>`;
+  }
+}
+
+function renderUserList(users, roles) {
+  const list = document.getElementById('user-list');
+  if (!users.length) {
+    list.innerHTML = '<div class="empty-state"><div class="es-icon">👤</div><p>No users yet. Add the first one.</p></div>';
+    return;
+  }
+  const roleMap = Object.fromEntries(roles.map(r => [r.id, r.name]));
+  list.innerHTML = users.map(u => {
+    const initials = u.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    const roleName = roleMap[u.role_id] || 'No role';
+    return `
+    <div class="user-row ${u.active ? '' : 'user-inactive'}">
+      <div class="user-avatar">${initials}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(u.name)}</div>
+        <div class="user-meta">${esc(roleName)} &middot; Added ${formatDate(u.created_at)}</div>
+      </div>
+      <span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Active' : 'Inactive'}</span>
+      <div class="user-actions">
+        <button class="btn btn-ghost btn-sm" data-action="edit-user" data-id="${u.id}">Edit</button>
+        <button class="btn btn-ghost btn-sm" data-action="toggle-user" data-id="${u.id}" data-active="${u.active}">
+          ${u.active ? 'Deactivate' : 'Activate'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-add-user').addEventListener('click', () => {
+  const roleOptions = state.roles.map(r =>
+    `<option value="${r.id}">${cap(r.name)}</option>`
+  ).join('');
+
+  showModal('Add user', `
+    <div class="form-group">
+      <label class="form-label">Full name</label>
+      <input class="form-input" id="m-name" placeholder="e.g. Kenny Smith" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">PIN (4 digits)</label>
+      <input class="form-input" id="m-pin" type="number" placeholder="e.g. 4821" maxlength="4" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="form-select" id="m-role">${roleOptions}</select>
+    </div>
+    <p class="text-muted text-sm mt-2">PINs are hashed before saving — you won't be able to retrieve this PIN later, only reset it.</p>
+  `, [
+    { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
+    { label: 'Add user', cls: 'btn-primary', fn: saveNewUser },
+  ]);
+});
+
+async function saveNewUser() {
+  const name   = document.getElementById('m-name').value.trim();
+  const pin    = document.getElementById('m-pin').value.trim();
+  const roleId = document.getElementById('m-role').value;
+
+  if (!name)                       { toast('Name is required', 'error'); return; }
+  if (!/^\d{4}$/.test(pin))        { toast('PIN must be exactly 4 digits', 'error'); return; }
+  if (!roleId)                     { toast('Select a role', 'error'); return; }
+
+  try {
+    const hash = await hashPin(pin);
+    await sbPost('users', { name, pin_hash: hash, role_id: roleId, active: true });
+    closeModal();
+    toast(`${name} added`, 'success');
+    loadUsers();
+  } catch(e) {
+    toast(`Error: ${e.message}`, 'error');
+  }
+}
+
+async function editUser(id) {
+  const user = state.users.find(u => u.id === id);
+  if (!user) return;
+  const roleOptions = state.roles.map(r =>
+    `<option value="${r.id}" ${r.id === user.role_id ? 'selected' : ''}>${cap(r.name)}</option>`
+  ).join('');
+
+  showModal(`Edit — ${user.name}`, `
+    <div class="form-group">
+      <label class="form-label">Full name</label>
+      <input class="form-input" id="m-name" value="${esc(user.name)}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">New PIN (leave blank to keep current)</label>
+      <input class="form-input" id="m-pin" type="number" placeholder="4 digits or leave blank" maxlength="4" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="form-select" id="m-role">${roleOptions}</select>
+    </div>
+  `, [
+    { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
+    { label: 'Save changes', cls: 'btn-primary', fn: () => saveEditUser(id) },
+  ]);
+}
+
+async function saveEditUser(id) {
+  const name   = document.getElementById('m-name').value.trim();
+  const pin    = document.getElementById('m-pin').value.trim();
+  const roleId = document.getElementById('m-role').value;
+
+  if (!name) { toast('Name is required', 'error'); return; }
+  if (pin && !/^\d{4}$/.test(pin)) { toast('PIN must be exactly 4 digits', 'error'); return; }
+
+  try {
+    const update = { name, role_id: roleId };
+    if (pin) update.pin_hash = await hashPin(pin);
+    await sbPatch('users', `id=eq.${id}`, update);
+    closeModal();
+    toast('User updated', 'success');
+    loadUsers();
+  } catch(e) {
+    toast(`Error: ${e.message}`, 'error');
+  }
+}
+
+async function toggleUser(id, currentlyActive) {
+  const user = state.users.find(u => u.id === id);
+  if (!user) return;
+  const action = currentlyActive ? 'Deactivate' : 'Activate';
+  showModal(`${action} ${user.name}?`, `
+    <p class="text-muted text-sm">${currentlyActive
+      ? 'This user will no longer be able to sign in.'
+      : 'This user will be able to sign in again.'}</p>
+  `, [
+    { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
+    { label: action,   cls: currentlyActive ? 'btn-danger' : 'btn-primary', fn: async () => {
+      try {
+        await sbPatch('users', `id=eq.${id}`, { active: !currentlyActive });
+        closeModal();
+        toast(`${user.name} ${currentlyActive ? 'deactivated' : 'activated'}`, 'success');
+        loadUsers();
+      } catch(e) {
+        toast(`Error: ${e.message}`, 'error');
+      }
+    }},
+  ]);
+}
+
+/* ══════════════════════════════════════
+   ADMIN — ROLES
+══════════════════════════════════════ */
+async function loadRoles() {
+  const list = document.getElementById('role-list');
+  list.innerHTML = '<div class="loading-screen"><div class="spinner"></div><span>Loading roles…</span></div>';
+  try {
+    const roles = await sbGet('roles', 'select=id,name,permitted_modules&order=name.asc');
+    state.roles = roles;
+    renderRoleList(roles);
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state"><p>Failed to load roles: ${e.message}</p></div>`;
+  }
+}
+
+function renderRoleList(roles) {
+  const list = document.getElementById('role-list');
+  if (!roles.length) {
+    list.innerHTML = '<div class="empty-state"><p>No roles found.</p></div>';
+    return;
+  }
+  list.innerHTML = roles.map(r => {
+    const chips = (r.permitted_modules || [])
+      .filter(m => m !== 'home')
+      .map(m => {
+        const mod = MODULE_REGISTRY[m];
+        return `<span class="module-chip">${mod ? mod.name : m}</span>`;
+      }).join('');
+    return `
+    <div class="role-row">
+      <div class="role-name">${esc(cap(r.name))}</div>
+      <div class="module-chips">${chips || '<span class="text-muted text-sm">No modules</span>'}</div>
+      <button class="btn btn-ghost btn-sm role-edit-btn" data-action="edit-role" data-id="${r.id}">Edit permissions</button>
+    </div>`;
+  }).join('');
+}
+
+async function editRole(id) {
+  const role = state.roles.find(r => r.id === id);
+  if (!role) return;
+  const current = role.permitted_modules || [];
+
+  const checks = ALL_MODULES.map(key => {
+    const m = MODULE_REGISTRY[key];
+    const checked = current.includes(key);
+    return `
+    <label class="module-check-row ${checked ? 'checked' : ''}">
+      <input type="checkbox" value="${key}" ${checked ? 'checked' : ''} data-action="role-mod-toggle" />
+      <span class="module-check-label">${m ? m.icon + ' ' + m.name : key}</span>
+    </label>`;
+  }).join('');
+
+  // Also offer admin module for admin role
+  const adminCheck = `
+    <label class="module-check-row ${current.includes('admin') ? 'checked' : ''}">
+      <input type="checkbox" value="admin" ${current.includes('admin') ? 'checked' : ''} data-action="role-mod-toggle" />
+      <span class="module-check-label">⚙️ Admin panel</span>
+    </label>`;
+
+  showModal(`Edit — ${cap(role.name)}`, `
+    <p class="text-muted text-sm" style="margin-bottom:12px;">Choose which modules this role can access.</p>
+    <div class="module-checks" id="module-checks">
+      ${checks}
+      ${adminCheck}
+    </div>
+  `, [
+    { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
+    { label: 'Save', cls: 'btn-primary', fn: () => saveRole(id) },
+  ]);
+
+  // Live toggle styling
+  document.getElementById('modal-body').addEventListener('change', e => {
+    if (e.target.dataset.action === 'role-mod-toggle') {
+      e.target.closest('.module-check-row').classList.toggle('checked', e.target.checked);
+    }
+  });
+}
+
+async function saveRole(id) {
+  const boxes = document.querySelectorAll('#module-checks input[type=checkbox]');
+  const mods = ['home', ...Array.from(boxes).filter(b => b.checked).map(b => b.value)];
+  try {
+    await sbPatch('roles', `id=eq.${id}`, { permitted_modules: mods });
+    closeModal();
+    toast('Role updated', 'success');
+    loadRoles();
+  } catch(e) {
+    toast(`Error: ${e.message}`, 'error');
+  }
+}
+
+/* ── Helpers ── */
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function formatDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/* ── PWA install ── */
+let deferredInstall;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+});
+
+/* ── Init ── */
+showPage('pin-page');
+</script>
+</body>
+</html>
