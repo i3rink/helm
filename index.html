@@ -773,6 +773,7 @@
       <div class="home-greeting">
         <div class="home-greeting-name" id="greeting-name">Welcome back</div>
         <div class="home-greeting-sub" id="greeting-sub">Choose a module to get started.</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--muted);" id="helm-version"></div>
       </div>
       <div class="module-grid" id="module-grid"></div>
     </div>
@@ -910,7 +911,7 @@ const APP_VERSION  = 'v1.4.0';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
-  blueprint: { name: 'Blueprint', icon: '📐', color: 'c-teal',  desc: 'Survey, design and quote builder',        page: 'blueprint-page', version: null },
+  blueprint: { name: 'Blueprint', icon: '📐', color: 'c-teal',  desc: 'Survey, design and quote builder',        page: 'blueprint-page', version: 'v1.0.2' },
   scout:     { name: 'Scout',     icon: '🎯', color: 'c-green', desc: 'Sales, customer comms and payments',      page: 'scout-page',     version: 'v0.2.2' },
   talli:     { name: 'Talli',     icon: '📦', color: 'c-amber', desc: 'Stock, goods in, pick and warehouse ops', page: 'talli-page',     version: 'v2.9.8' },
   haul:      { name: 'Haul',      icon: '🚐', color: 'c-teal',  desc: 'Route planning and driver delivery',      page: 'haul-page',      version: 'v3.7.4' },
@@ -1075,6 +1076,7 @@ function onLoginSuccess() {
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   document.getElementById('greeting-name').textContent = `${greet}, ${state.user.name.split(' ')[0]}.`;
+  document.getElementById('helm-version').textContent = `Helm ${APP_VERSION}`;
 
   // Reset PIN screen for next time
   state.pin = '';
