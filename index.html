@@ -1,4 +1,4 @@
-<!-- Helm v1.4.2 -->
+<!-- Helm v1.4.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -912,7 +912,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.4.2';
+const APP_VERSION  = 'v1.4.4';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1123,7 +1123,7 @@ function buildModuleGrid() {
       <div>
         <div class="module-card-name">${m.name}</div>
         <div class="module-card-desc">${m.desc}</div>
-        ${m.version ? `<span class="module-card-version">${m.version}</span>` : ''}
+        <span class="module-card-version" id="ver-${key}">${m.version || '...'}</span>
       </div>`;
     grid.appendChild(card);
   });
@@ -1131,7 +1131,27 @@ function buildModuleGrid() {
   if (grid.children.length === 0) {
     grid.innerHTML = '<div class="empty-state"><div class="es-icon">🔒</div><p>No modules assigned. Contact your admin.</p></div>';
   }
+
+  // Fetch live versions from Supabase and update badges
+  fetchLiveVersions();
 }
+
+async function fetchLiveVersions() {
+  try {
+    const rows = await sbGet('module_versions', 'select=module,version');
+    if (!rows) return;
+    rows.forEach(row => {
+      const el = document.getElementById('ver-' + row.module);
+      if (el) el.textContent = row.version;
+    });
+  } catch(e) { console.warn('Version fetch failed:', e); }
+}
+
+// Re-fetch versions every 30 seconds to catch updates after iframes load
+setInterval(function() {
+  const homePage = document.getElementById('home-page');
+  if (homePage && homePage.classList.contains('active')) fetchLiveVersions();
+}, 30000);
 
 /* ── PIN key handler ── */
 document.getElementById('pin-pad').addEventListener('click', e => {
@@ -1187,7 +1207,7 @@ document.addEventListener('click', e => {
   if (!el) return;
   const action = el.dataset.action;
 
-  if (action === 'go-home') { showPage('home-page'); return; }
+  if (action === 'go-home') { showPage('home-page'); fetchLiveVersions(); return; }
 
   if (action === 'open-module') {
     const mod = el.dataset.mod;
