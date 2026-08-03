@@ -1,4 +1,4 @@
-<!-- Helm v1.4.1 -->
+<!-- Helm v1.4.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -911,16 +911,16 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.4.1';
+const APP_VERSION  = 'v1.4.5';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
-  blueprint: { name: 'Blueprint', icon: '📐', color: 'c-teal',  desc: 'Survey, design and quote builder',        page: 'blueprint-page', version: 'v1.0.2' },
-  scout:     { name: 'Scout',     icon: '🎯', color: 'c-green', desc: 'Sales, customer comms and payments',      page: 'scout-page',     version: 'v0.2.2' },
-  talli:     { name: 'Talli',     icon: '📦', color: 'c-amber', desc: 'Stock, goods in, pick and warehouse ops', page: 'talli-page',     version: 'v2.9.8' },
-  haul:      { name: 'Haul',      icon: '🚐', color: 'c-teal',  desc: 'Route planning and driver delivery',      page: 'haul-page',      version: 'v3.7.4' },
-  fitters:   { name: 'Fitters',   icon: '🔧', color: 'c-green', desc: 'Site materials check and job sign-off',   page: 'fitters-page',   version: null },
-  admin:     { name: 'Admin',     icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',       page: 'admin-page',     version: null },
+  blueprint: { name: 'Blueprint', icon: '📐', color: 'c-teal',  desc: 'Survey, design and quote builder',        page: 'blueprint-page', url: 'https://i3rink.github.io/qb/',      version: null },
+  scout:     { name: 'Scout',     icon: '🎯', color: 'c-green', desc: 'Sales, customer comms and payments',      page: 'scout-page',     url: 'https://i3rink.github.io/Scout/',   version: null },
+  talli:     { name: 'Talli',     icon: '📦', color: 'c-amber', desc: 'Stock, goods in, pick and warehouse ops', page: 'talli-page',     url: 'https://i3rink.github.io/Talli/',   version: null },
+  haul:      { name: 'Haul',      icon: '🚐', color: 'c-teal',  desc: 'Route planning and driver delivery',      page: 'haul-page',      url: 'https://i3rink.github.io/haul/',    version: null },
+  fitters:   { name: 'Fitters',   icon: '🔧', color: 'c-green', desc: 'Site materials check and job sign-off',   page: 'fitters-page',   url: null,                                version: null },
+  admin:     { name: 'Admin',     icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',       page: 'admin-page',     url: null,                                version: null },
 };
 
 const ALL_MODULES = Object.keys(MODULE_REGISTRY).filter(k => k !== 'home' && k !== 'admin');
@@ -1006,7 +1006,18 @@ function showPage(id) {
   if (pg) pg.classList.add('active');
   state.view = id;
   window.scrollTo(0, 0);
+  // Push history state so Android hardware back button returns to home
+  if (id !== 'home-page' && id !== 'pin-page') {
+    history.pushState({ page: id }, '', '');
+  }
 }
+
+// Android hardware back button — pop back to home
+window.addEventListener('popstate', () => {
+  if (state.view && state.view !== 'home-page' && state.view !== 'pin-page') {
+    showPage('home-page');
+  }
+});
 
 function showAuthenticatedUI(show) {
   document.getElementById('app-header').style.display = show ? 'flex' : 'none';
@@ -1076,6 +1087,10 @@ function onLoginSuccess() {
   // Build module grid
   buildModuleGrid();
 
+  // Fetch live versions for each module in the background, then poll every 30s
+  fetchLiveVersions();
+  setInterval(fetchLiveVersions, 30000);
+
   // Greeting
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -1089,6 +1104,33 @@ function onLoginSuccess() {
   updateDots();
 
   showPage('home-page');
+}
+
+/* ── Live version fetch ── */
+async function fetchLiveVersions() {
+  const entries = Object.entries(MODULE_REGISTRY).filter(([, m]) => m.url);
+  await Promise.allSettled(entries.map(async ([key, m]) => {
+    try {
+      const res = await fetch(m.url, { cache: 'no-store' });
+      if (!res.ok) return;
+      const html = await res.text();
+      const match = html.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if (match) {
+        MODULE_REGISTRY[key].version = match[1];
+        // Update badge on the already-rendered card
+        const card = document.querySelector(`[data-mod="${key}"]`);
+        if (card) {
+          let badge = card.querySelector('.module-card-version');
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'module-card-version';
+            card.querySelector('.module-card-name').parentNode.appendChild(badge);
+          }
+          badge.textContent = match[1];
+        }
+      }
+    } catch (_) { /* network error — leave version blank */ }
+  }));
 }
 
 function buildModuleGrid() {
