@@ -1,4 +1,4 @@
-<!-- Helm v1.5.0 -->
+<!-- Helm v1.5.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -911,7 +911,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.0';
+const APP_VERSION  = 'v1.5.1';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1224,17 +1224,19 @@ document.addEventListener('click', e => {
     if (!m) return;
     if (mod === 'admin') { openAdmin(); return; }
     showPage(m.page);
-    // For Haul — store pending user so HAUL_READY handler can send it
     if (mod === 'haul' && state.user) {
-      state.pendingHaulUser = state.user;
-      // Also try immediately in case iframe is already loaded and ready
       const frame = document.getElementById('haul-page-frame');
-      try {
-        frame.contentWindow.postMessage(
-          { type: 'HELM_USER', user: state.user },
-          'https://i3rink.github.io'
-        );
-      } catch(e) {}
+      const send = () => {
+        try {
+          frame.contentWindow.postMessage(
+            { type: 'HELM_USER', user: state.user },
+            'https://i3rink.github.io'
+          );
+        } catch(e) {}
+      };
+      // Small delay to ensure Haul scripts have registered their listeners
+      setTimeout(send, 300);
+      frame.addEventListener('load', send, { once: true });
     }
     return;
   }
@@ -1561,21 +1563,7 @@ window.addEventListener('beforeinstallprompt', e => {
 /* ── Module postMessage handlers ── */
 window.addEventListener('message', e => {
   if (e.origin !== 'https://i3rink.github.io') return;
-  // Haul signals it's ready — send pending user context
-  if (e.data && e.data.type === 'HAUL_READY') {
-    if (state.pendingHaulUser) {
-      const frame = document.getElementById('haul-page-frame');
-      try {
-        frame.contentWindow.postMessage(
-          { type: 'HELM_USER', user: state.pendingHaulUser },
-          'https://i3rink.github.io'
-        );
-      } catch(e) {}
-    }
-  }
-  // Haul requests navigation back to Helm home
   if (e.data && e.data.type === 'HAUL_NAV' && e.data.action === 'go-home') {
-    state.pendingHaulUser = null;
     showPage('home-page');
   }
 });
