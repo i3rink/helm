@@ -1,4 +1,4 @@
-<!-- Helm v1.4.7 -->
+<!-- Helm v1.4.8 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -911,7 +911,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.4.7';
+const APP_VERSION  = 'v1.4.8';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1223,6 +1223,24 @@ document.addEventListener('click', e => {
     if (!m) return;
     if (mod === 'admin') { openAdmin(); return; }
     showPage(m.page);
+    // Pass user context into Haul via postMessage after it loads
+    if (mod === 'haul' && state.user) {
+      const frame = document.getElementById('haul-page-frame');
+      const send = () => {
+        try {
+          frame.contentWindow.postMessage(
+            { type: 'HELM_USER', user: state.user },
+            'https://i3rink.github.io'
+          );
+        } catch(e) {}
+      };
+      // If already loaded fire immediately, otherwise wait for load
+      if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+        send();
+      } else {
+        frame.addEventListener('load', send, { once: true });
+      }
+    }
     return;
   }
 
