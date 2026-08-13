@@ -1,4 +1,4 @@
-<!-- Helm v1.5.2 -->
+<!-- Helm v1.5.3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -830,10 +830,18 @@
 
   <div class="page" id="fitters-page">
     <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
-    <div class="module-placeholder">
-      <div class="ph-icon">🔧</div>
-      <div class="ph-title">Fitters</div>
-      <div class="ph-sub">Not yet built — coming soon.</div>
+    <div class="module-iframe-wrap" id="fitters-page-wrap">
+      <div class="iframe-loading" id="fitters-page-loader">
+        <div class="spin"></div>
+        <span>Loading Fitters…</span>
+      </div>
+      <iframe
+        id="fitters-page-frame"
+        src="https://i3rink.github.io/fitters/"
+        title="Fitters"
+        allow="clipboard-read; clipboard-write"
+        onload="document.getElementById('fitters-page-loader').style.display='none';"
+      ></iframe>
     </div>
   </div>
 
@@ -921,7 +929,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.2';
+const APP_VERSION  = 'v1.5.3';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1239,8 +1247,9 @@ document.addEventListener('click', e => {
     if (!m) return;
     if (mod === 'admin') { openAdmin(); return; }
     showPage(m.page);
-    if (mod === 'haul' && state.user) {
-      const frame = document.getElementById('haul-page-frame');
+    if ((mod === 'haul' || mod === 'fitters') && state.user) {
+      const frameId = mod === 'haul' ? 'haul-page-frame' : 'fitters-page-frame';
+      const frame = document.getElementById(frameId);
       const send = () => {
         try {
           frame.contentWindow.postMessage(
@@ -1249,7 +1258,7 @@ document.addEventListener('click', e => {
           );
         } catch(e) {}
       };
-      // Small delay to ensure Haul scripts have registered their listeners
+      // Small delay to ensure child app scripts have registered their listeners
       setTimeout(send, 300);
       frame.addEventListener('load', send, { once: true });
     }
@@ -1621,6 +1630,9 @@ window.addEventListener('message', e => {
   }
   if (e.data && e.data.type === 'HAUL_CLEAR_BADGE') {
     clearHaulBadge();
+  }
+  if (e.data && e.data.type === 'FITTERS_NAV' && e.data.action === 'go-home') {
+    showPage('home-page');
   }
 });
 
