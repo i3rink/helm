@@ -1,4 +1,4 @@
-<!-- Helm v1.5.1 -->
+<!-- Helm v1.5.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -473,6 +473,16 @@
     .module-card.c-green .module-card-icon { background: var(--green-faint); color: var(--green); }
     .module-card.c-amber .module-card-icon { background: var(--amber-faint); color: var(--amber); }
     .module-card.c-red .module-card-icon { background: var(--red-faint); color: var(--red); }
+    .alert-dot {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 0 2px var(--surface);
+    }
 
     /* ══════════════════════════════════════
        ADMIN PANEL
@@ -911,7 +921,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.1';
+const APP_VERSION  = 'v1.5.2';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1091,6 +1101,11 @@ function onLoginSuccess() {
   // Fetch live versions for each module in the background, then poll every 30s
   fetchLiveVersions();
   setInterval(fetchLiveVersions, 30000);
+
+  // If driver, poll for active routes and show badge dot on Haul card
+  if (state.user.role_name && state.user.role_name.toLowerCase() === 'driver') {
+    startHaulBadgePoll();
+  }
 
   // Greeting
   const hour = new Date().getHours();
@@ -1560,11 +1575,52 @@ window.addEventListener('beforeinstallprompt', e => {
   deferredInstall = e;
 });
 
+/* ── Haul badge poll (driver role only) ── */
+let _haulBadgeInterval = null;
+
+async function checkHaulBadge() {
+  if (!state.user) return;
+  try {
+    const rows = await sbGet(
+      'routes',
+      `driver_name=eq.${encodeURIComponent(state.user.name)}&status=eq.active&select=id&limit=1`
+    );
+    const card = document.querySelector('[data-mod="haul"]');
+    if (!card) return;
+    const hasRoute = rows && rows.length > 0;
+    let dot = card.querySelector('.alert-dot');
+    if (hasRoute && !dot) {
+      dot = document.createElement('div');
+      dot.className = 'alert-dot';
+      card.appendChild(dot);
+    } else if (!hasRoute && dot) {
+      dot.remove();
+    }
+  } catch (_) {}
+}
+
+function startHaulBadgePoll() {
+  checkHaulBadge();
+  if (_haulBadgeInterval) clearInterval(_haulBadgeInterval);
+  _haulBadgeInterval = setInterval(checkHaulBadge, 30000);
+}
+
+function clearHaulBadge() {
+  const card = document.querySelector('[data-mod="haul"]');
+  if (card) {
+    const dot = card.querySelector('.alert-dot');
+    if (dot) dot.remove();
+  }
+}
+
 /* ── Module postMessage handlers ── */
 window.addEventListener('message', e => {
   if (e.origin !== 'https://i3rink.github.io') return;
   if (e.data && e.data.type === 'HAUL_NAV' && e.data.action === 'go-home') {
     showPage('home-page');
+  }
+  if (e.data && e.data.type === 'HAUL_CLEAR_BADGE') {
+    clearHaulBadge();
   }
 });
 
