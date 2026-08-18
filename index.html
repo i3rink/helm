@@ -1,4 +1,4 @@
-<!-- Helm v1.5.9 -->
+<!-- Helm v1.5.10 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -920,7 +920,12 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.9';
+const APP_VERSION  = 'v1.5.10';
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  const sw = `const CACHE='helm-${APP_VERSION}';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));return r;}).catch(()=>caches.match(e.request)));});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
