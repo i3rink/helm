@@ -1,4 +1,4 @@
-<!-- Helm v1.5.12 -->
+<!-- Helm v1.5.13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,8 +93,9 @@
     /* ── Layout ── */
     #app { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-    .page { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+    .page { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .page.active { display: flex; }
+    #haul-page, #talli-page, #fitters-page, #scout-page, #blueprint-page { overflow: hidden; }
 
     /* ── Header ── */
     .app-header {
@@ -487,7 +488,7 @@
     /* ══════════════════════════════════════
        ADMIN PANEL
     ══════════════════════════════════════ */
-    #admin-page { padding: 20px; }
+    #admin-page { padding: 20px; overflow-y: auto; }
     .admin-tabs {
       display: flex;
       gap: 4px;
@@ -921,7 +922,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.12';
+const APP_VERSION  = 'v1.5.13';
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
   const sw = `const CACHE='helm-${APP_VERSION}';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));return r;}).catch(()=>caches.match(e.request)));});`;
