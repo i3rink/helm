@@ -1,4 +1,4 @@
-<!-- Helm v1.5.5 -->
+<!-- Helm v1.5.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -884,7 +884,6 @@
     <div class="mod-back"><button class="btn btn-ghost btn-sm" data-action="go-home">&#8592; Home</button></div>
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="users">Users</button>
-      <button class="admin-tab" data-tab="roles">Roles</button>
     </div>
 
     <!-- Users tab -->
@@ -898,15 +897,7 @@
       </div>
     </div>
 
-    <!-- Roles tab -->
-    <div id="admin-roles-tab" style="display:none;">
-      <div class="section-header">
-        <span class="section-title">Roles &amp; permissions</span>
-      </div>
-      <div id="role-list" class="role-list">
-        <div class="loading-screen"><div class="spinner"></div><span>Loading roles…</span></div>
-      </div>
-    </div>
+
   </div>
 
 </div><!-- /app -->
@@ -929,7 +920,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.5';
+const APP_VERSION  = 'v1.5.6';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -941,13 +932,13 @@ const MODULE_REGISTRY = {
   admin:     { name: 'Admin',     icon: '⚙️',  color: 'c-red',   desc: 'Users, roles and system settings',       page: 'admin-page',     url: null,                                version: null },
 };
 
-const ALL_MODULES = Object.keys(MODULE_REGISTRY).filter(k => k !== 'home' && k !== 'admin');
+const ALL_MODULES = [...Object.keys(MODULE_REGISTRY).filter(k => k !== 'home' && k !== 'admin'), 'talli-admin', 'haul-admin'];
 
 /* ── State ── */
 const state = {
   pin:             '',
   user:            null,   // { id, name, role_id, role_name, permitted_modules }
-  roles:           [],
+
   users:           [],
   adminTab:        'users',
   view:            'pin',
@@ -1071,7 +1062,7 @@ function pinShake() {
 async function attemptLogin() {
   const hash = await hashPin(state.pin);
   try {
-    const rows = await sbGet('users', `pin_hash=eq.${hash}&active=eq.true&select=id,name,role_id`);
+    const rows = await sbGet('users', `pin_hash=eq.${hash}&active=eq.true&select=id,name,job_title,permitted_modules`);
     if (!rows || rows.length === 0) {
       document.getElementById('pin-label').textContent = 'Incorrect PIN — try again';
       document.getElementById('pin-label').className = 'pin-label err';
@@ -1079,15 +1070,11 @@ async function attemptLogin() {
       return;
     }
     const user = rows[0];
-    // Fetch role
-    const roleRows = await sbGet('roles', `id=eq.${user.role_id}&select=name,permitted_modules`);
-    const role = roleRows[0];
     state.user = {
-      id: user.id,
-      name: user.name,
-      role_id: user.role_id,
-      role_name: role.name,
-      permitted_modules: role.permitted_modules || [],
+      id:                user.id,
+      name:              user.name,
+      job_title:         user.job_title || '',
+      permitted_modules: user.permitted_modules || [],
     };
     onLoginSuccess();
   } catch (e) {
@@ -1100,7 +1087,7 @@ async function attemptLogin() {
 function onLoginSuccess() {
   // Header
   document.getElementById('header-user-name').textContent = state.user.name;
-  document.getElementById('header-role-badge').textContent = state.user.role_name;
+  document.getElementById('header-role-badge').textContent = state.user.job_title || '';
   showAuthenticatedUI(true);
 
   // Build module grid
@@ -1111,7 +1098,9 @@ function onLoginSuccess() {
   setInterval(fetchLiveVersions, 30000);
 
   // If driver, poll for active routes and show badge dot on Haul card
-  if (state.user.role_name && state.user.role_name.toLowerCase() === 'driver') {
+  const mods = state.user.permitted_modules;
+  const isDriver = mods.includes('haul') && !mods.includes('haul-admin');
+  if (isDriver) {
     startHaulBadgePoll();
   }
 
@@ -1265,71 +1254,84 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if (action === 'admin-tab') {
-    const tab = el.dataset.tab;
-    state.adminTab = tab;
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    document.getElementById('admin-users-tab').style.display = tab === 'users' ? '' : 'none';
-    document.getElementById('admin-roles-tab').style.display = tab === 'roles'  ? '' : 'none';
-    if (tab === 'roles') loadRoles();
-    return;
-  }
 
   if (action === 'edit-user') { editUser(el.dataset.id); return; }
   if (action === 'toggle-user') { toggleUser(el.dataset.id, el.dataset.active === 'true'); return; }
-  if (action === 'edit-role') { editRole(el.dataset.id); return; }
 });
 
-document.querySelectorAll('.admin-tab').forEach(t => {
-  t.addEventListener('click', () => {
-    const tab = t.dataset.tab;
-    state.adminTab = tab;
-    document.querySelectorAll('.admin-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
-    document.getElementById('admin-users-tab').style.display = tab === 'users' ? '' : 'none';
-    document.getElementById('admin-roles-tab').style.display = tab === 'roles'  ? '' : 'none';
-    if (tab === 'roles') loadRoles();
-    if (tab === 'users') loadUsers();
-  });
-});
+// Admin panel: users tab only — no tab switching needed
 
 /* ══════════════════════════════════════
    ADMIN — USERS
 ══════════════════════════════════════ */
 async function openAdmin() {
   showPage('admin-page');
-  await Promise.all([loadUsers(), loadRoles()]);
+  await loadUsers();
+}
+
+/* ── Module checkbox helpers for user editor ── */
+function buildModuleChecks(current) {
+  return ALL_MODULES.map(key => {
+    const m = MODULE_REGISTRY[key];
+    const label = m ? m.icon + ' ' + m.name : (key === 'talli-admin' ? '📦 Talli Admin' : '🚗 Haul Admin');
+    const checked = current.includes(key);
+    return `
+    <label class="module-check-row ${checked ? 'checked' : ''}">
+      <input type="checkbox" value="${key}" ${checked ? 'checked' : ''} data-action="role-mod-toggle" />
+      <span class="module-check-label">${label}</span>
+    </label>`;
+  }).join('');
+}
+
+function getCheckedModules() {
+  const boxes = document.querySelectorAll('#module-checks input[type=checkbox]');
+  return Array.from(boxes).filter(b => b.checked).map(b => b.value);
+}
+
+function attachModuleCheckListeners() {
+  const body = document.getElementById('modal-body');
+  if (!body) return;
+  body.addEventListener('change', e => {
+    if (e.target.dataset.action === 'role-mod-toggle') {
+      e.target.closest('.module-check-row').classList.toggle('checked', e.target.checked);
+    }
+  });
 }
 
 async function loadUsers() {
   const list = document.getElementById('user-list');
   list.innerHTML = '<div class="loading-screen"><div class="spinner"></div><span>Loading users…</span></div>';
   try {
-    const users = await sbGet('users', 'select=id,name,role_id,active,created_at&order=name.asc');
-    const roles  = await sbGet('roles', 'select=id,name');
+    const users = await sbGet('users', 'select=id,name,job_title,permitted_modules,active,created_at&order=name.asc');
     state.users = users;
-    state.roles = roles;
-    renderUserList(users, roles);
+    renderUserList(users);
   } catch(e) {
     list.innerHTML = `<div class="empty-state"><p>Failed to load users: ${e.message}</p></div>`;
   }
 }
 
-function renderUserList(users, roles) {
+function renderUserList(users) {
   const list = document.getElementById('user-list');
   if (!users.length) {
     list.innerHTML = '<div class="empty-state"><div class="es-icon">👤</div><p>No users yet. Add the first one.</p></div>';
     return;
   }
-  const roleMap = Object.fromEntries(roles.map(r => [r.id, r.name]));
   list.innerHTML = users.map(u => {
     const initials = u.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-    const roleName = roleMap[u.role_id] || 'No role';
+    const mods = (u.permitted_modules || []).filter(m => m !== 'home');
+    const modChips = mods.map(m => {
+      const reg = MODULE_REGISTRY[m];
+      const label = reg ? reg.icon + ' ' + reg.name : m;
+      return `<span class="badge badge-role" style="margin-right:4px;">${esc(label)}</span>`;
+    }).join('');
+    const meta = (u.job_title ? `<strong>${esc(u.job_title)}</strong> &middot; ` : '') + `Added ${formatDate(u.created_at)}`;
     return `
     <div class="user-row ${u.active ? '' : 'user-inactive'}">
       <div class="user-avatar">${initials}</div>
       <div class="user-info">
         <div class="user-name">${esc(u.name)}</div>
-        <div class="user-meta">${esc(roleName)} &middot; Added ${formatDate(u.created_at)}</div>
+        <div class="user-meta">${meta}</div>
+        <div style="margin-top:4px;">${modChips}</div>
       </div>
       <span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Active' : 'Inactive'}</span>
       <div class="user-actions">
@@ -1343,42 +1345,44 @@ function renderUserList(users, roles) {
 }
 
 document.getElementById('btn-add-user').addEventListener('click', () => {
-  const roleOptions = state.roles.map(r =>
-    `<option value="${r.id}">${cap(r.name)}</option>`
-  ).join('');
-
+  const checks = buildModuleChecks([]);
   showModal('Add user', `
     <div class="form-group">
       <label class="form-label">Full name</label>
       <input class="form-input" id="m-name" placeholder="e.g. Kenny Smith" />
     </div>
     <div class="form-group">
+      <label class="form-label">Job title <span class="text-muted">(optional)</span></label>
+      <input class="form-input" id="m-jobtitle" placeholder="e.g. Warehouse &amp; Driver" />
+    </div>
+    <div class="form-group">
       <label class="form-label">PIN (4 digits)</label>
       <input class="form-input" id="m-pin" type="number" placeholder="e.g. 4821" maxlength="4" inputmode="numeric" />
     </div>
     <div class="form-group">
-      <label class="form-label">Role</label>
-      <select class="form-select" id="m-role">${roleOptions}</select>
+      <label class="form-label">Modules</label>
+      <div class="module-checks" id="module-checks">${checks}</div>
     </div>
     <p class="text-muted text-sm mt-2">PINs are hashed before saving — you won't be able to retrieve this PIN later, only reset it.</p>
   `, [
     { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
     { label: 'Add user', cls: 'btn-primary', fn: saveNewUser },
   ]);
+  attachModuleCheckListeners();
 });
 
 async function saveNewUser() {
-  const name   = document.getElementById('m-name').value.trim();
-  const pin    = document.getElementById('m-pin').value.trim();
-  const roleId = document.getElementById('m-role').value;
+  const name     = document.getElementById('m-name').value.trim();
+  const jobTitle = document.getElementById('m-jobtitle').value.trim();
+  const pin      = document.getElementById('m-pin').value.trim();
+  const mods     = getCheckedModules();
 
-  if (!name)                       { toast('Name is required', 'error'); return; }
-  if (!/^\d{4}$/.test(pin))        { toast('PIN must be exactly 4 digits', 'error'); return; }
-  if (!roleId)                     { toast('Select a role', 'error'); return; }
+  if (!name)              { toast('Name is required', 'error'); return; }
+  if (!/^\d{4}$/.test(pin)) { toast('PIN must be exactly 4 digits', 'error'); return; }
 
   try {
     const hash = await hashPin(pin);
-    await sbPost('users', { name, pin_hash: hash, role_id: roleId, active: true });
+    await sbPost('users', { name, job_title: jobTitle, pin_hash: hash, permitted_modules: ['home', ...mods], active: true });
     closeModal();
     toast(`${name} added`, 'success');
     loadUsers();
@@ -1390,9 +1394,8 @@ async function saveNewUser() {
 async function editUser(id) {
   const user = state.users.find(u => u.id === id);
   if (!user) return;
-  const roleOptions = state.roles.map(r =>
-    `<option value="${r.id}" ${r.id === user.role_id ? 'selected' : ''}>${cap(r.name)}</option>`
-  ).join('');
+  const current = (user.permitted_modules || []).filter(m => m !== 'home');
+  const checks = buildModuleChecks(current);
 
   showModal(`Edit — ${user.name}`, `
     <div class="form-group">
@@ -1400,29 +1403,35 @@ async function editUser(id) {
       <input class="form-input" id="m-name" value="${esc(user.name)}" />
     </div>
     <div class="form-group">
+      <label class="form-label">Job title <span class="text-muted">(optional)</span></label>
+      <input class="form-input" id="m-jobtitle" value="${esc(user.job_title || '')}" placeholder="e.g. Warehouse &amp; Driver" />
+    </div>
+    <div class="form-group">
       <label class="form-label">New PIN (leave blank to keep current)</label>
       <input class="form-input" id="m-pin" type="number" placeholder="4 digits or leave blank" maxlength="4" inputmode="numeric" />
     </div>
     <div class="form-group">
-      <label class="form-label">Role</label>
-      <select class="form-select" id="m-role">${roleOptions}</select>
+      <label class="form-label">Modules</label>
+      <div class="module-checks" id="module-checks">${checks}</div>
     </div>
   `, [
     { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
     { label: 'Save changes', cls: 'btn-primary', fn: () => saveEditUser(id) },
   ]);
+  attachModuleCheckListeners();
 }
 
 async function saveEditUser(id) {
-  const name   = document.getElementById('m-name').value.trim();
-  const pin    = document.getElementById('m-pin').value.trim();
-  const roleId = document.getElementById('m-role').value;
+  const name     = document.getElementById('m-name').value.trim();
+  const jobTitle = document.getElementById('m-jobtitle').value.trim();
+  const pin      = document.getElementById('m-pin').value.trim();
+  const mods     = getCheckedModules();
 
   if (!name) { toast('Name is required', 'error'); return; }
   if (pin && !/^\d{4}$/.test(pin)) { toast('PIN must be exactly 4 digits', 'error'); return; }
 
   try {
-    const update = { name, role_id: roleId };
+    const update = { name, job_title: jobTitle, permitted_modules: ['home', ...mods] };
     if (pin) update.pin_hash = await hashPin(pin);
     await sbPatch('users', `id=eq.${id}`, update);
     closeModal();
@@ -1459,97 +1468,6 @@ async function toggleUser(id, currentlyActive) {
 /* ══════════════════════════════════════
    ADMIN — ROLES
 ══════════════════════════════════════ */
-async function loadRoles() {
-  const list = document.getElementById('role-list');
-  list.innerHTML = '<div class="loading-screen"><div class="spinner"></div><span>Loading roles…</span></div>';
-  try {
-    const roles = await sbGet('roles', 'select=id,name,permitted_modules&order=name.asc');
-    state.roles = roles;
-    renderRoleList(roles);
-  } catch(e) {
-    list.innerHTML = `<div class="empty-state"><p>Failed to load roles: ${e.message}</p></div>`;
-  }
-}
-
-function renderRoleList(roles) {
-  const list = document.getElementById('role-list');
-  if (!roles.length) {
-    list.innerHTML = '<div class="empty-state"><p>No roles found.</p></div>';
-    return;
-  }
-  list.innerHTML = roles.map(r => {
-    const chips = (r.permitted_modules || [])
-      .filter(m => m !== 'home')
-      .map(m => {
-        const mod = MODULE_REGISTRY[m];
-        return `<span class="module-chip">${mod ? mod.name : m}</span>`;
-      }).join('');
-    return `
-    <div class="role-row">
-      <div class="role-name">${esc(cap(r.name))}</div>
-      <div class="module-chips">${chips || '<span class="text-muted text-sm">No modules</span>'}</div>
-      <button class="btn btn-ghost btn-sm role-edit-btn" data-action="edit-role" data-id="${r.id}">Edit permissions</button>
-    </div>`;
-  }).join('');
-}
-
-async function editRole(id) {
-  const role = state.roles.find(r => r.id === id);
-  if (!role) return;
-  const current = role.permitted_modules || [];
-
-  const checks = ALL_MODULES.map(key => {
-    const m = MODULE_REGISTRY[key];
-    const checked = current.includes(key);
-    return `
-    <label class="module-check-row ${checked ? 'checked' : ''}">
-      <input type="checkbox" value="${key}" ${checked ? 'checked' : ''} data-action="role-mod-toggle" />
-      <span class="module-check-label">${m ? m.icon + ' ' + m.name : key}</span>
-    </label>`;
-  }).join('');
-
-  // Also offer admin module for admin role
-  const adminCheck = `
-    <label class="module-check-row ${current.includes('admin') ? 'checked' : ''}">
-      <input type="checkbox" value="admin" ${current.includes('admin') ? 'checked' : ''} data-action="role-mod-toggle" />
-      <span class="module-check-label">⚙️ Admin panel</span>
-    </label>
-    <label class="module-check-row ${current.includes('talli-admin') ? 'checked' : ''}">
-      <input type="checkbox" value="talli-admin" ${current.includes('talli-admin') ? 'checked' : ''} data-action="role-mod-toggle" />
-      <span class="module-check-label">📦 Talli Admin</span>
-    </label>`;
-
-  showModal(`Edit — ${cap(role.name)}`, `
-    <p class="text-muted text-sm" style="margin-bottom:12px;">Choose which modules this role can access.</p>
-    <div class="module-checks" id="module-checks">
-      ${checks}
-      ${adminCheck}
-    </div>
-  `, [
-    { label: 'Cancel', cls: 'btn-ghost', fn: closeModal },
-    { label: 'Save', cls: 'btn-primary', fn: () => saveRole(id) },
-  ]);
-
-  // Live toggle styling
-  document.getElementById('modal-body').addEventListener('change', e => {
-    if (e.target.dataset.action === 'role-mod-toggle') {
-      e.target.closest('.module-check-row').classList.toggle('checked', e.target.checked);
-    }
-  });
-}
-
-async function saveRole(id) {
-  const boxes = document.querySelectorAll('#module-checks input[type=checkbox]');
-  const mods = ['home', ...Array.from(boxes).filter(b => b.checked).map(b => b.value)];
-  try {
-    await sbPatch('roles', `id=eq.${id}`, { permitted_modules: mods });
-    closeModal();
-    toast('Role updated', 'success');
-    loadRoles();
-  } catch(e) {
-    toast(`Error: ${e.message}`, 'error');
-  }
-}
 
 /* ── Helpers ── */
 function esc(s) {
