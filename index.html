@@ -1,4 +1,4 @@
-<!-- Helm v1.5.3 -->
+<!-- Helm v1.5.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -820,7 +820,7 @@
       </div>
       <iframe
         id="talli-page-frame"
-        src="https://i3rink.github.io/Talli/"
+        src="https://i3rink.github.io/talli-sandbox/"
         title="Talli"
         allow="clipboard-read; clipboard-write"
         onload="document.getElementById('talli-page-loader').style.display='none';"
@@ -929,7 +929,7 @@
 /* ── Config ── */
 const SUPABASE_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
-const APP_VERSION  = 'v1.5.3';
+const APP_VERSION  = 'v1.5.4';
 
 /* ── Module registry ── */
 const MODULE_REGISTRY = {
@@ -1247,8 +1247,8 @@ document.addEventListener('click', e => {
     if (!m) return;
     if (mod === 'admin') { openAdmin(); return; }
     showPage(m.page);
-    if ((mod === 'haul' || mod === 'fitters') && state.user) {
-      const frameId = mod === 'haul' ? 'haul-page-frame' : 'fitters-page-frame';
+    if ((mod === 'haul' || mod === 'fitters' || mod === 'talli') && state.user) {
+      const frameId = mod === 'haul' ? 'haul-page-frame' : mod === 'fitters' ? 'fitters-page-frame' : 'talli-page-frame';
       const frame = document.getElementById(frameId);
       const send = () => {
         try {
@@ -1513,6 +1513,10 @@ async function editRole(id) {
     <label class="module-check-row ${current.includes('admin') ? 'checked' : ''}">
       <input type="checkbox" value="admin" ${current.includes('admin') ? 'checked' : ''} data-action="role-mod-toggle" />
       <span class="module-check-label">⚙️ Admin panel</span>
+    </label>
+    <label class="module-check-row ${current.includes('talli-admin') ? 'checked' : ''}">
+      <input type="checkbox" value="talli-admin" ${current.includes('talli-admin') ? 'checked' : ''} data-action="role-mod-toggle" />
+      <span class="module-check-label">📦 Talli Admin</span>
     </label>`;
 
   showModal(`Edit — ${cap(role.name)}`, `
